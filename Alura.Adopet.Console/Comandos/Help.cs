@@ -1,10 +1,22 @@
 ﻿
+using System.Reflection;
+
 namespace Alura.Adopet.Console.Comandos
 {
     [DocComando(instrucao: "help",
      documentacao: "adopet help comando que exibe informações da ajuda.")]
     internal class Help : IComando
     {
+        private Dictionary<string, DocComando> docs;
+
+        public Help()
+        {
+            docs = Assembly.GetExecutingAssembly().GetTypes()
+               .Where(t => t.GetCustomAttributes<DocComando>().Any())
+               .Select(t => t.GetCustomAttribute<DocComando>()!)
+               .ToDictionary(d => d.Instrucao);
+        }
+
         public Task ExecutarAsync(string[] args)
         {
             ExibeDocumentacao(parametros: args);
