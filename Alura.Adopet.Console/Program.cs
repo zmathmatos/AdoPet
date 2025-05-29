@@ -3,33 +3,27 @@ using System.Net.Http.Json;
 using Alura.Adopet.Console.Comandos;
 using Alura.Adopet.Console.Modelos;
 
-// na linha abaixo cria-se uma instância de HttpClient para consumir API Adopet.
-HttpClient client = ConfiguraHttpClient("http://localhost:5057");
+Dictionary<string, IComando> comandosDoSistema = new()
+{
+    { "help", new Help() },
+    { "import", new Import() },
+    { "show", new Show() },
+    { "list", new List() },
+};
+
 Console.ForegroundColor = ConsoleColor.Green;
 try
 {
     string comando = args[0].Trim();
-    switch (comando)
+    if (comandosDoSistema.ContainsKey(comando))
     {
-        case "import":
-            var import = new Import();
-            await import.ExecutarAsync(args);
-            break;
-        case "help":
-            var help = new Help();
-            help.ExibeDocumentacao(args);
-            break;
-        case "show":
-            var show = new Show();
-            await show.ExecutarAsync(args);
-            break;
-        case "list":
-            var list = new List();
-            await list.ExecutarAsync(args);
-            break;
-        default:
-            Console.WriteLine("Comando inválido!");
-            break;
+        IComando? cmd = comandosDoSistema[comando];
+        await cmd.ExecutarAsync(args);
+    } 
+    else
+    {
+        Console.WriteLine("Comando inválido! Use 'help' para ver a lista de comandos disponíveis.");
+        return;
     }
 }
 catch (Exception ex)
@@ -43,25 +37,3 @@ finally
     Console.ForegroundColor = ConsoleColor.White;
 }
 
-HttpClient ConfiguraHttpClient(string url)
-{
-    HttpClient _client = new HttpClient();
-    _client.DefaultRequestHeaders.Accept.Clear();
-    _client.DefaultRequestHeaders.Accept.Add(
-        new MediaTypeWithQualityHeaderValue("application/json"));
-    _client.BaseAddress = new Uri(url);
-    return _client;
-}
-Task<HttpResponseMessage> CreatePetAsync(Pet pet)
-{
-    HttpResponseMessage? response = null;
-    using (response = new HttpResponseMessage())
-    {
-        return client.PostAsJsonAsync("pet/add", pet);
-    }
-}
-async Task<IEnumerable<Pet>?> ListPetsAsync()
-{
-    HttpResponseMessage response = await client.GetAsync("pet/list");
-    return await response.Content.ReadFromJsonAsync<IEnumerable<Pet>>();
-}
